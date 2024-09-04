@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "npm run build && node server.js",
-    "build": "cd ../frontend && npm run build"
+    "build": "cd ../frontend && npm run build && cp -r ../frontend/dist ../backend/public"
   },
   "type": "module",
   "keywords": [],
