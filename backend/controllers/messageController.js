@@ -7,7 +7,7 @@ async function sendMessage(req, res) {
   try {
     const { recipientId, message } = req.body;
     let { img } = req.body;
-    const senderId = req.user._id;
+    const senderId = req.user._id.toString();
 
     let conversation = await Conversation.findOne({
       participants: { $all: [senderId, recipientId] },
@@ -30,7 +30,7 @@ async function sendMessage(req, res) {
     }
 
     const newMessage = new Message({
-      conversationId: conversation._id,
+      conversationId: conversation._id.toString(),
       sender: senderId,
       text: message,
       img: img || "",
@@ -73,7 +73,7 @@ async function getMessages(req, res) {
     }
 
     const messages = await Message.find({
-      conversationId: conversation._id,
+      conversationId: conversation._id.toString(),
     }).sort({ createdAt: 1 });
 
     res.status(200).json(messages);
@@ -83,7 +83,7 @@ async function getMessages(req, res) {
 }
 
 async function getConversations(req, res) {
-  const userId = req.user._id;
+  const userId = req.user._id.toString();
   try {
     const conversations = await Conversation.find({ participants: userId }).populate({
       path: "participants",

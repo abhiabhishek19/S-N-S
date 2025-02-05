@@ -153,7 +153,7 @@ io.on("connection", (socket) => {
       });
 
       if (aiIsPresentInMessage) {
-        const prompt = message.replace("@ai", "").trim();
+        const prompt = message.replace("@ai", "").trim();;
         console.log("AI prompt:", prompt);
 
         try {
@@ -169,8 +169,10 @@ io.on("connection", (socket) => {
 
           io.to(conversationId).emit("project-message", {
             ...savedAiMessage.toObject(),
-            conversationId,
+            conversationId: conversationId.toString(),
+            sender: "ai",
           });
+          console.log("Emitted AI response:", savedAiMessage.toObject());
         } catch (aiError) {
           console.error("Error generating AI response:", aiError.message);
         }

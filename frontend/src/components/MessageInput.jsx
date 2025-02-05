@@ -20,6 +20,7 @@ import {
   import { useRecoilValue, useSetRecoilState } from "recoil";
   import { BsFillImageFill } from "react-icons/bs";
   import usePreviewImg from "../hooks/usePreviewImg";
+  import { useSocket } from "../context/SocketContext"; // Import useSocket
   
   const MessageInput = ({ setMessages }) => {
 	const [messageText, setMessageText] = useState("");
@@ -30,57 +31,67 @@ import {
 	const { onClose } = useDisclosure();
 	const { handleImageChange, imgUrl, setImgUrl } = usePreviewImg();
 	const [isSending, setIsSending] = useState(false);
+	const { socket } = useSocket(); // Get socket from context
   
 	const handleSendMessage = async (e) => {
-		e.preventDefault();
-		if (!messageText && !imgUrl) return;
-		if (isSending) return;
-	  
-		setIsSending(true);
-	  
-		try {
-		  const res = await fetch("/api/messages", {
-			method: "POST",
-			headers: {
-			  "Content-Type": "application/json",
-			},
-			body: JSON.stringify({
-			  message: messageText,
-			  recipientId: selectedConversation.userId,
-			  img: imgUrl,
-			}),
-		  });
-		  const data = await res.json();
-		  if (data.error) {
-			showToast("Error", data.error, "error");
-			return;
-		  }
-		  console.log("Message sent from msginput:", data);
-		  setMessages((messages) => [...messages, data]);
-	  
-		  setConversations((prevConvs) => {
-			const updatedConversations = prevConvs.map((conversation) => {
-			  if (conversation._id === selectedConversation._id) {
-				return {
-				  ...conversation,
-				  lastMessage: {
-					text: messageText,
-					sender: data.sender,
-				  },
-				};
-			  }
-			  return conversation;
-			});
-			return updatedConversations;
-		  });
-		  setMessageText("");
-		  setImgUrl("");
-		} catch (error) {
-		  showToast("Error", error.message, "error");
-		} finally {
-		  setIsSending(false);
+	  e.preventDefault();
+	  if (!messageText && !imgUrl) return;
+	  if (isSending) return;
+  
+	  setIsSending(true);
+  
+	  try {
+		const res = await fetch("/api/messages", {
+		  method: "POST",
+		  headers: {
+			"Content-Type": "application/json",
+		  },
+		  body: JSON.stringify({
+			message: messageText,
+			recipientId: selectedConversation.userId,
+			img: imgUrl,
+		  }),
+		});
+		const data = await res.json();
+		if (data.error) {
+		  showToast("Error", data.error, "error");
+		  return;
 		}
-	  };
+		console.log("Message sent from msginput:", data);
+		setMessages((messages) => [...messages, data]);
+  
+		// Emit the newMessage event with conversationId and senderId
+		if (socket) {
+		  socket.emit("newMessage", {
+			conversationId: selectedConversation._id.toString(),
+			senderId: data.sender, // Use data.sender from the response
+			message: messageText,
+		  });
+		}
+  
+		setConversations((prevConvs) => {
+		  const updatedConversations = prevConvs.map((conversation) => {
+			if (conversation._id === selectedConversation._id) {
+			  return {
+				...conversation,
+				lastMessage: {
+				  text: messageText,
+				  sender: data.sender,
+				},
+			  };
+			}
+			return conversation;
+		  });
+		  return updatedConversations;
+		});
+		setMessageText("");
+		setImgUrl("");
+	  } catch (error) {
+		showToast("Error", error.message, "error");
+	  } finally {
+		setIsSending(false);
+	  }
+	};
   
 	return (
 	  <Flex gap={2} alignItems={"center"}>

@@ -31,7 +31,7 @@ export const SocketContextProvider = ({ children }) => {
     });
 
     newSocket.on("project-message", (newMessage) => {
-      console.log("Received message:", newMessage);
+      console.log("Received project - message:", newMessage);
 
       setConversations((prevConversations) => {
         const updatedConversations = prevConversations.map(conversation => {

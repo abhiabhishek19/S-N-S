@@ -7,15 +7,15 @@
 //   const result = await model.generateContent(prompt);
 //   return result.response.text();
 // };
-
+import dotenv from "dotenv";
+dotenv.config();
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const apiKey = process.env.GOOGLE_API_KEY;
-if (!apiKey) {
-  throw new Error("Google API key is not set in the environment variables.");
-}
 
-const genAI = new GoogleGenerativeAI(apiKey);
+const key = process.env.GOOGLE_API_KEY;
+
+const genAI = new GoogleGenerativeAI(key);
+
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 export const generateResult = async (prompt) => {
