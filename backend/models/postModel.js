@@ -39,6 +39,10 @@ const postSchema = mongoose.Schema(
 				},
 			},
 		],
+		canSubscribe: {
+            type: Boolean,
+            default: false,
+        },
 	},
 	{
 		timestamps: true,

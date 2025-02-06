@@ -1,5 +1,6 @@
 import User from "../models/userModel.js";
 import Post from "../models/postModel.js";
+import Subscription from "../models/subscriptionModel.js";
 import bcrypt from "bcryptjs";
 import generateTokenAndSetCookie from "../utils/helpers/generateTokenAndSetCookie.js";
 import { v2 as cloudinary } from "cloudinary";
@@ -238,6 +239,16 @@ const freezeAccount = async (req, res) => {
 		res.status(500).json({ error: error.message });
 	}
 };
+// userController.js
+const getsubposts = async (req, res) => {
+    try {
+        const userId = req.user._id.toString();
+        const subscriptions = await Subscription.find({ isSubscribedBy: userId });
+        res.status(200).json({ count: subscriptions.length });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
 
 export {
 	signupUser,
@@ -248,4 +259,5 @@ export {
 	getUserProfile,
 	getSuggestedUsers,
 	freezeAccount,
+	getsubposts
 }; 

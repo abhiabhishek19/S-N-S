@@ -1,45 +1,83 @@
 import Post from "../models/postModel.js";
 import User from "../models/userModel.js";
 import { v2 as cloudinary } from "cloudinary";
+import Subscription from "../models/subscriptionModel.js";
+
+// const createPost = async (req, res) => {
+// 	try {
+// 		const { postedBy, text } = req.body;
+// 		let { img } = req.body;
+
+// 		if (!postedBy || !text) {
+// 			return res.status(400).json({ error: "Postedby and text fields are required" });
+// 		}
+
+// 		const user = await User.findById(postedBy);
+// 		if (!user) {
+// 			return res.status(404).json({ error: "User not found" });
+// 		}
+
+// 		if (user._id.toString() !== req.user._id.toString()) {
+// 			return res.status(401).json({ error: "Unauthorized to create post" });
+// 		}
+
+// 		const maxLength = 500;
+// 		if (text.length > maxLength) {
+// 			return res.status(400).json({ error: `Text must be less than ${maxLength} characters` });
+// 		}
+
+// 		if (img) {
+// 			const uploadedResponse = await cloudinary.uploader.upload(img);
+// 			img = uploadedResponse.secure_url;
+// 		}
+
+// 		const newPost = new Post({ postedBy, text, img });
+// 		await newPost.save();
+
+// 		res.status(201).json(newPost);
+// 	} catch (err) {
+// 		res.status(500).json({ error: err.message });
+// 		console.log(err);
+// 	}
+// };
 
 const createPost = async (req, res) => {
-	try {
-		const { postedBy, text } = req.body;
-		let { img } = req.body;
+    try {
+        const { postedBy, text, canSubscribe } = req.body;
+        let { img } = req.body;
 
-		if (!postedBy || !text) {
-			return res.status(400).json({ error: "Postedby and text fields are required" });
-		}
+        if (!postedBy || !text) {
+            return res.status(400).json({ error: "Postedby and text fields are required" });
+        }
 
-		const user = await User.findById(postedBy);
-		if (!user) {
-			return res.status(404).json({ error: "User not found" });
-		}
+        const user = await User.findById(postedBy);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
 
-		if (user._id.toString() !== req.user._id.toString()) {
-			return res.status(401).json({ error: "Unauthorized to create post" });
-		}
+        if (user._id.toString() !== req.user._id.toString()) {
+            return res.status(401).json({ error: "Unauthorized to create post" });
+        }
 
-		const maxLength = 500;
-		if (text.length > maxLength) {
-			return res.status(400).json({ error: `Text must be less than ${maxLength} characters` });
-		}
+        const maxLength = 500;
+        if (text.length > maxLength) {
+            return res.status(400).json({ error: `Text must be less than ${maxLength} characters` });
+        }
 
-		if (img) {
-			const uploadedResponse = await cloudinary.uploader.upload(img);
-			img = uploadedResponse.secure_url;
-		}
+        if (img) {
+            const uploadedResponse = await cloudinary.uploader.upload(img);
+            img = uploadedResponse.secure_url;
+        }
 
-		const newPost = new Post({ postedBy, text, img });
-		await newPost.save();
+        const newPost = new Post({ postedBy, text, img, canSubscribe });
+        await newPost.save();
 
-		res.status(201).json(newPost);
-	} catch (err) {
-		res.status(500).json({ error: err.message });
-		console.log(err);
-	}
+        res.status(201).json(newPost);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+        console.log(err);
+    }
 };
-
 const getPost = async (req, res) => {
 	try {
 		const post = await Post.findById(req.params.id);
@@ -167,5 +205,43 @@ const getUserPosts = async (req, res) => {
 		res.status(500).json({ error: error.message });
 	}
 };
+// postController.js
+const subscribeToPost = async (req, res) => {
+    try {
+        const { postId } = req.params;
+        const userId = req.user._id.toString();
 
-export { createPost, getPost, deletePost, likeUnlikePost, replyToPost, getFeedPosts, getUserPosts };
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res.status(404).json({ error: "Post not found" });
+        }
+
+        if (!post.canSubscribe) {
+            return res.status(400).json({ error: "This post is not available for subscription" });
+        }
+
+        // Check if the user is already subscribed to this post
+        const existingSubscription = await Subscription.findOne({
+            isSubscribedBy: userId,
+            SubscribedPost: postId,
+        });
+
+        if (existingSubscription) {
+            return res.status(400).json({ error: "You are already subscribed to this post" });
+        }
+
+        // Create a new subscription
+        const subscription = new Subscription({
+            isSubscribedBy: userId,
+            SubscribedPost: postId,
+        });
+
+        await subscription.save();
+
+        res.status(200).json({ message: "Subscribed successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+export { createPost, getPost, deletePost, likeUnlikePost, replyToPost, getFeedPosts, getUserPosts, subscribeToPost };
